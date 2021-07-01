@@ -1,6 +1,6 @@
 version: '3'
 services:
-   db:
+  db:
     image: ${SQL_IMAGE}
     environment:
       SA_PASSWORD: ${SA_PASSWORD}
@@ -15,7 +15,8 @@ services:
       - sqlvolume:/var/opt/mssql
     networks:
       - octopusnet
-   octopus-server:
+  
+  octopus-server:
     image: octopusdeploy/octopusdeploy:${OCTOPUS_SERVER_TAG}
     privileged: ${PRIVILEGED}
     user: octopus
@@ -43,6 +44,26 @@ services:
       - import:/import
     networks:
       - octopusnet
+  
+  octopus-worker:
+    image: octopusdeploy/tentacle:latest
+    ports:
+      - 10934:10934
+    environment: 
+      ListeningPort: 10934
+      ServerApiKey: ${ADMIN_API_KEY}
+      TargetWorkerPool: default
+      ServerUrl: http://octopus-server:8080
+      PublicHostNameConfiguration: FQDN
+      ACCEPT_EULA: ${ACCEPT_OCTOPUS_EULA}
+    depends_on: 
+      - octopus-server
+    volumes:
+      - logs:/Octopus/Logs
+      - applications:/home/Octopus/Applications
+    networks:
+      - octopusnet
+
 volumes:
   repository:
   artifacts:
@@ -50,5 +71,7 @@ volumes:
   cache:
   import:
   sqlvolume:
+  logs:
+  applications:
 networks:
   octopusnet:
